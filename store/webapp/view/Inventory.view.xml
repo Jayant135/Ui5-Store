@@ -1,0 +1,190 @@
+<mvc:View
+    controllerName="store.controller.Inventory"
+    xmlns:mvc="sap.ui.core.mvc"
+    xmlns="sap.m"
+    xmlns:t="sap.ui.table"
+>
+    <Page title="Inventory">
+        <!-- Category Tiles -->
+        <HBox
+            class="sapUiSmallMargin"
+            wrap="Wrap"
+        >
+            <GenericTile
+                header="Groceries"
+                press="onCategoryPress"
+            >
+                <customData>
+                    <core:CustomData
+                        key="category"
+                        value="Groceries"
+                        xmlns:core="sap.ui.core"
+                    />
+                </customData>
+                <TileContent>
+                    <NumericContent value="1762" />
+                </TileContent>
+            </GenericTile>
+
+            <GenericTile
+                header="Stationary"
+                press="onCategoryPress"
+            >
+                <customData>
+                    <core:CustomData
+                        key="category"
+                        value="Stationary"
+                        xmlns:core="sap.ui.core"
+                    />
+                </customData>
+                <TileContent>
+                    <NumericContent value="12" />
+                </TileContent>
+            </GenericTile>
+        </HBox>
+
+        <Table
+            id="inventoryTable"
+            items="{inv>/items}"
+            visible="{inv>/showTable}"
+            alternateRowColors="true"
+            mode="MultiSelect"
+        >
+            <columns>
+                <Column>
+                    <Text text="Name" />
+                </Column>
+                <Column>
+                    <Text text="Qty" />
+                </Column>
+                <Column>
+                    <Text text="Cost Price" />
+                </Column>
+                <Column>
+                    <Text text="Selling Price" />
+                </Column>
+                <Column>
+                    <Text text="Margin" />
+                </Column>
+            </columns>
+
+            <items>
+                <ColumnListItem>
+                    <cells>
+                        <!-- NAME -->
+                        <HBox>
+                            <Text
+                                text="{inv>name}"
+                            />
+                        </HBox>
+
+                        <!-- STOCK -->
+                        <HBox>
+                            <Text
+                                text="{inv>stock}"
+                            />
+                        </HBox>
+
+                        <!-- COST -->
+                        <HBox>
+                            <Text
+                                text="{inv>cost}"
+                                visible="{= !${inv>_edit} }"
+                            />
+                            <Input
+                                type="Number"
+                                value="{inv>cost}"
+                                visible="{inv>_edit}"
+                            />
+                        </HBox>
+
+                        <!-- PRICE -->
+                        <HBox>
+                            <Text
+                                text="{inv>price}"
+                                visible="{= !${inv>_edit} }"
+                            />
+                            <Input
+                                type="Number"
+                                value="{inv>price}"
+                                visible="{inv>_edit}"
+                            />
+                        </HBox>
+                    </cells>
+                </ColumnListItem>
+            </items>
+        </Table>
+
+        <Toolbar visible="{inv>/showTable}">
+            <Button
+                text="Add"
+                press="onAdd"
+            />
+            <Button
+                text="Edit"
+                press="onEdit"
+            />
+            <Button
+                text="Save"
+                press="onSave"
+                visible="{inv>_edit}"
+            />
+            <Button
+                text="Cancel"
+                press="onCancel"
+                visible="{inv>_edit}"
+            />
+            <Button
+                text="Delete"
+                press="onDelete"
+            />
+        </Toolbar>
+
+       
+
+        <Dialog
+            id="addDialog"
+            title="Add Item"
+        >
+            <VBox class="sapUiSmallMargin">
+                <Input
+                    id="inpName"
+                    placeholder="Item Name"
+                    required="true"
+                />
+
+                <Input
+                    id="inpStock"
+                    type="Number"
+                    placeholder="Stock"
+                />
+
+                <Input
+                    id="inpCost"
+                    type="Number"
+                    placeholder="Cost Price"
+                />
+
+                <Input
+                    id="inpPrice"
+                    type="Number"
+                    placeholder="Selling Price"
+                />
+            </VBox>
+
+            <beginButton>
+                <Button
+                    text="Save"
+                    press="onSaveItem"
+                />
+            </beginButton>
+
+            <endButton>
+                <Button
+                    text="Cancel"
+                    press="onCancelDialog"
+                />
+            </endButton>
+        </Dialog>
+    </Page>
+</mvc:View>
