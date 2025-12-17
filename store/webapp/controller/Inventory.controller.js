@@ -2,8 +2,9 @@ sap.ui.define([
     "sap/ui/core/mvc/Controller",
     "sap/ui/model/json/JSONModel",
     "store/util/firebase",
+    "sap/m/MessageBox",
     "sap/m/MessageToast"
-], function (Controller, JSONModel, Firebase, MessageToast) {
+], function (Controller, JSONModel, Firebase, MessageBox, MessageToast) {
     "use strict";
 
     return Controller.extend("store.controller.Inventory", {
@@ -81,77 +82,94 @@ sap.ui.define([
         // },
         onEdit: function () {
             const oTable = this.byId("inventoryTable");
-            const oItem = oTable.getSelectedItem();
-            if (!oItem) {
-                MessageToast.show("Select a row first");
+            const aItems = oTable.getSelectedItems();
+            const oButton = this.byId("btnEdit");
+            const oModel = this.getView().getModel("inv");
+            const that = this; // 👈 IMPORTANT
+
+            if (!aItems.length) {
+                MessageToast.show("Select at least one row");
                 return;
             }
-            const oCtx = oItem.getBindingContext("inv");
-            const oData = oCtx.getObject();
 
-            const obutton = this.byId("btnEdit");
-            if (obutton.getText() === "EDIT") {
-                oData._edit = true;
-                this._oEditBackup = Object.assign({}, oData);
-                obutton.setText("DISPLAY");
+            // ================= ENTER EDIT MODE =================
+            if (oButton.getText() === "Edit") {
+
+                this._aEditBackup = [];
+
+                aItems.forEach(oItem => {
+                    const oData = oItem.getBindingContext("inv").getObject();
+                    this._aEditBackup.push(Object.assign({}, oData));
+                    oData._edit = true;
+                });
+
+                oButton.setText("Display");
+                oModel.refresh(true);
+                return; // 👈 yahin function khatam
             }
-            else {
-                MessageBox.warning("Changes made will be lost.Do you want to continue.", {
+
+            // ================= EXIT EDIT MODE =================
+            MessageBox.warning(
+                "Changes made will be lost. Do you want to continue?",
+                {
                     actions: [MessageBox.Action.OK, MessageBox.Action.CANCEL],
-                    emphasizedAction: MessageBox.Action.OK,
                     onClose: function (sAction) {
-                        if (sAction === "OK") {
-                            Object.assign(oData, this._oEditBackup);
-                            oData._edit = false;
-                            obutton.setText("EDIT");
+                        if (sAction === MessageBox.Action.OK) {
 
-                        }
-                        else {
-                            return;
-                        }
-                    },
-                    dependentOn: this.getView()
-                })
-            }
+                            that._aEditBackup.forEach(oBackup => {
+                                const oCurrent = oModel.getProperty("/items")
+                                    .find(i => i.id === oBackup.id);
 
-            oCtx.getModel().refresh(true);
+                                Object.assign(oCurrent, oBackup);
+                                oCurrent._edit = false;
+                            });
+
+                            oButton.setText("Edit");
+                            oModel.refresh(true);
+                        }
+                    }
+                }
+            );
         },
+
 
         onSave: function () {
             const oTable = this.byId("inventoryTable");
-            const oItem = oTable.getSelectedItem();
+            const aItems = oTable.getSelectedItems();
 
-            if (!oItem) {
-                MessageToast.show("No row selected");
+            if (!aItems.length) {
+                MessageToast.show("Nothing to save");
                 return;
             }
 
-            const oCtx = oItem.getBindingContext("inv");
-            const oData = oCtx.getObject();
-            var oBatch = this._db.batch();
+            const oBatch = this._db.batch();
 
-            oData.forEach(function (oItem) {
-                var oRef = this._db.collection("inventory").doc(oItem.id);
-            
+            aItems.forEach(oItem => {
+                const oData = oItem.getBindingContext("inv").getObject();
+                const oRef = this._db.collection("inventory").doc(oData.id);
+
                 oBatch.update(oRef, {
-                    name: oItem.name,
-                    stock: Number(oItem.stock),
-                    cost: Number(oItem.cost),
-                    price: Number(oItem.price)
+                    name: oData.name,
+                    stock: Number(oData.stock),
+                    cost: Number(oData.cost),
+                    price: Number(oData.price)
                 });
-            }.bind(this));
-            
-            oBatch.commit().then(() => {
-                MessageToast.show("Items updated");
-                oCtx.getModel().refresh(true);
+
+                oData._edit = false;
             });
-            
+
+            oBatch.commit().then(() => {
+                MessageToast.show("Changes saved");
+                this.byId("btnEdit").setText("Edit");
+                this.getView().getModel("inv").refresh(true);
+            });
         },
+
 
         // 🔹 DELETE
         onDelete: function () {
             const oItem =
-                this.byId("inventoryTable").getSelectedItem();
+                this.byId("inventoryTable").getSelectedItems();
 
             if (!oItem) {
                 MessageToast.show("Select an item");
@@ -193,6 +211,7 @@ sap.ui.define([
                 this._loadItems();
                 this._resetDialog();
             });
+            this.byId("btnEdit").setText("Edit");
 
         },
         onCancelDialog: function () {
