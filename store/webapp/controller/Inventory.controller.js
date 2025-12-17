@@ -82,30 +82,37 @@ sap.ui.define([
         onEdit: function () {
             const oTable = this.byId("inventoryTable");
             const oItem = oTable.getSelectedItem();
-
             if (!oItem) {
                 MessageToast.show("Select a row first");
                 return;
             }
-
             const oCtx = oItem.getBindingContext("inv");
             const oData = oCtx.getObject();
 
-            // backup original data
-            // if (this._oEditBackup == true) {
-            //     MessageBox.warning("Changes made will be lost.Do you want to continue.", {
-            //         actions: [MessageBox.Action.OK, MessageBox.Action.CANCEL],
-            //         emphasizedAction: MessageBox.Action.OK,
-            //         onClose: function (sAction) {
-            //             MessageToast.show("Action selected: " + sActin);
-            //         },
-            //         dependentOn: this.getView()
-            //     })
-            // }
-            // this._oEditBackup = Object.assign({}, oData);
+            const obutton = this.byId("btnEdit");
+            if (obutton.getText() === "EDIT") {
+                oData._edit = true;
+                this._oEditBackup = Object.assign({}, oData);
+                obutton.setText("DISPLAY");
+            }
+            else {
+                MessageBox.warning("Changes made will be lost.Do you want to continue.", {
+                    actions: [MessageBox.Action.OK, MessageBox.Action.CANCEL],
+                    emphasizedAction: MessageBox.Action.OK,
+                    onClose: function (sAction) {
+                        if (sAction === "OK") {
+                            Object.assign(oData, this._oEditBackup);
+                            oData._edit = false;
+                            obutton.setText("EDIT");
 
-            // enable edit mode only for this row
-            oData._edit = true;
+                        }
+                        else {
+                            return;
+                        }
+                    },
+                    dependentOn: this.getView()
+                })
+            }
 
             oCtx.getModel().refresh(true);
         },
@@ -121,44 +128,25 @@ sap.ui.define([
 
             const oCtx = oItem.getBindingContext("inv");
             const oData = oCtx.getObject();
+            var oBatch = this._db.batch();
 
-            const oPayload = {
-                name: oData.name,
-                stock: Number(oData.stock),
-                cost: Number(oData.cost),
-                price: Number(oData.price)
-            };
-
-            this._db.collection("inventory")
-                .doc(oData.id)
-                .update(oPayload)
-                .then(() => {
-                    MessageToast.show("Item updated");
-                    oData._edit = false;
-                    oCtx.getModel().refresh(true);
+            oData.forEach(function (oItem) {
+                var oRef = this._db.collection("inventory").doc(oItem.id);
+            
+                oBatch.update(oRef, {
+                    name: oItem.name,
+                    stock: Number(oItem.stock),
+                    cost: Number(oItem.cost),
+                    price: Number(oItem.price)
                 });
+            }.bind(this));
+            
+            oBatch.commit().then(() => {
+                MessageToast.show("Items updated");
+                oCtx.getModel().refresh(true);
+            });
+            
         },
-
-        onCancel: function () {
-            const oTable = this.byId("inventoryTable");
-            const oItem = oTable.getSelectedItem();
-
-            // if (!oItem || !this._oEditBackup) {
-            //     return;
-            // }
-
-            const oCtx = oItem.getBindingContext("inv");
-            const oData = oCtx.getObject();
-
-            // // restore original values
-            // Object.assign(oData, this._oEditBackup);
-            oData._edit = false;
-            this._loadItems();
-            // oCtx.getModel().refresh(true);
-        },
-
-
-
 
         // 🔹 DELETE
         onDelete: function () {

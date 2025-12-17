@@ -121,17 +121,13 @@
                 press="onAdd"
             />
             <Button
+                id ="btnEdit"
                 text="Edit"
                 press="onEdit"
             />
             <Button
                 text="Save"
                 press="onSave"
-                visible="{inv>_edit}"
-            />
-            <Button
-                text="Cancel"
-                press="onCancel"
                 visible="{inv>_edit}"
             />
             <Button
