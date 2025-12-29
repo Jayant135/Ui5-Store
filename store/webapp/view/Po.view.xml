@@ -1,0 +1,158 @@
+<mvc:View
+    controllerName="store.controller.Po"
+    xmlns:mvc="sap.ui.core.mvc"
+    xmlns="sap.m"
+    xmlns:core="sap.ui.core">
+
+<Page title="Purchase Orders">
+
+    <!-- PREVIOUS PO LIST -->
+    <Panel headerText="Previous Purchase Orders" class="sapUiSmallMargin">
+        <Table items="{po>/poList}" alternateRowColors="true">
+            <columns>
+                <Column><Text text="PO No"/></Column>
+                <Column><Text text="Date"/></Column>
+                <Column><Text text="Items"/></Column>
+                <Column hAlign="End"><Text text="Amount"/></Column>
+            </columns>
+            <items>
+                <ColumnListItem
+                    type="Active"
+                    press="onPOPress">
+                    <cells>
+                        <Text text="{po>poNumber}"/>
+                        <Text text="{po>poDate}"/>
+                        <Text text="{po>itemsCount}"/>
+                        <ObjectNumber number="{po>totalAmount}" unit="₹"/>
+                    </cells>
+                </ColumnListItem>
+            </items>
+        </Table>
+    </Panel>
+
+    <OverflowToolbar class="sapUiSmallMargin">
+        <ToolbarSpacer/>
+        <Button
+            text="Create PO"
+            icon="sap-icon://add"
+            type="Emphasized"
+            press="onCreatePO"/>
+    </OverflowToolbar>
+
+    <!-- CREATE PO DIALOG -->
+    <Dialog id="poDialog" title="Create Purchase Order" contentWidth="700px">
+        <ObjectHeader
+            title="{po>/currentPO/poNumber}"
+            number="{po>/currentPO/totalAmount}"
+            numberUnit="₹"/>
+
+        <VBox class="sapUiMediumMargin">
+
+            <Label text="Category"/>
+            <Select change="onCategoryChange" items="{po>/categories}">
+                <items>
+                    <core:Item key="{po>}" text="{po>}"/>
+                </items>
+            </Select>
+
+            <Label text="Item"/>
+            <ComboBox
+                id="itemSelect"
+                items="{po>/items}"
+                change="onItemChange"
+                placeholder="Select or type new">
+                <items>
+                    <core:Item key="{po>id}" text="{po>name}"/>
+                </items>
+            </ComboBox>
+
+            <!-- EXISTING ITEM -->
+            <VBox visible="{= ${po>/activeItem/isNew} === false }">
+                <Label text="Cost Price"/>
+                <Input value="{po>/activeItem/cost}" enabled="false"/>
+            </VBox>
+
+            <!-- NEW ITEM -->
+            <VBox visible="{= ${po>/activeItem/isNew} === true }">
+                <Label text="Cost Price"/>
+                <Input value="{po>/activeItem/cost}" type="Number"/>
+                <Label text="Selling Price"/>
+                <Input value="{po>/activeItem/price}" type="Number"/>
+            </VBox>
+
+            <Label text="Quantity"/>
+            <Input id="qtyInput" type="Number"/>
+
+            <Button text="Add Item" icon="sap-icon://add" press="onAddItem"/>
+        </VBox>
+
+        <Table items="{po>/currentPO/items}" class="sapUiSmallMarginTop">
+            <columns>
+                <Column><Text text="Item"/></Column>
+                <Column><Text text="Qty"/></Column>
+                <Column><Text text="Cost"/></Column>
+                <Column hAlign="End"><Text text="Total"/></Column>
+            </columns>
+            <items>
+                <ColumnListItem>
+                    <cells>
+                        <Text text="{po>name}"/>
+                        <Text text="{po>qty}"/>
+                        <Text text="{po>cost}"/>
+                        <ObjectNumber number="{po>total}" unit="₹"/>
+                    </cells>
+                </ColumnListItem>
+            </items>
+        </Table>
+
+        <beginButton>
+            <Button text="Save PO" type="Emphasized" press="onSavePO"/>
+        </beginButton>
+        <endButton>
+            <Button text="Cancel" press="onCancelPO"/>
+        </endButton>
+    </Dialog>
+
+    <!-- PO DETAIL DIALOG -->
+    <Dialog
+        id="poDetailDialog"
+        title="Purchase Order Details"
+        contentWidth="700px">
+
+        <ObjectHeader
+            title="{po>/selectedPO/poNumber}"
+            number="{po>/selectedPO/totalAmount}"
+            numberUnit="₹">
+            <attributes>
+                <ObjectAttribute text="{po>/selectedPO/poDate}"/>
+            </attributes>
+        </ObjectHeader>
+
+        <Table items="{po>/selectedPO/items}" class="sapUiSmallMarginTop">
+            <columns>
+                <Column><Text text="Item"/></Column>
+                <Column><Text text="Category"/></Column>
+                <Column><Text text="Qty"/></Column>
+                <Column><Text text="Cost"/></Column>
+                <Column hAlign="End"><Text text="Total"/></Column>
+            </columns>
+            <items>
+                <ColumnListItem>
+                    <cells>
+                        <Text text="{po>name}"/>
+                        <Text text="{po>category}"/>
+                        <Text text="{po>qty}"/>
+                        <Text text="{po>cost}"/>
+                        <ObjectNumber number="{po>total}" unit="₹"/>
+                    </cells>
+                </ColumnListItem>
+            </items>
+        </Table>
+
+        <endButton>
+            <Button text="Close" press="onClosePODetail"/>
+        </endButton>
+    </Dialog>
+
+</Page>
+</mvc:View>

@@ -16,6 +16,20 @@ sap.ui.define([
                 console.log("navigated");
                 
             }
+            if( sKey === 'po')
+            {
+                console.log("Po clicked");
+                oRouter.navTo("Po");
+                console.log("navigated to Po");
+
+            }
+            if( sKey === 'so')
+            {
+                console.log("So clicked");
+                oRouter.navTo("So");
+                console.log("navigated to So");
+
+            }
 
              
         }

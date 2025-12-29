@@ -28,5 +28,6 @@ sap.ui.define([], function () {
 
     return {
         init: initFirebase,
+        FieldValue: firebase.firestore.FieldValue 
     };
 });

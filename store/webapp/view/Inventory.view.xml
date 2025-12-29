@@ -110,6 +110,11 @@
                                 visible="{inv>_edit}"
                             />
                         </HBox>
+                         <!-- PRICE -->
+                        <HBox>
+                            <Text
+                                text="{inv>Margin}" />
+                        </HBox>
                     </cells>
                 </ColumnListItem>
             </items>

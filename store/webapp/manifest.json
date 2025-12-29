@@ -83,6 +83,16 @@
           "name":"Inventory",
           "pattern":"/inventory",
           "target": ["Inventory"]
+        },
+        {
+          "name":"Po",
+          "pattern":"Po",
+          "target": ["Po"]
+        },
+        {
+          "name":"So",
+          "pattern":"So",
+          "target": ["So"]
         }
       ],
       "targets": {
@@ -92,6 +102,12 @@
         },
         "Inventory":{
           "name": "Inventory"
+        },
+        "Po":{
+          "name": "Po"
+        },
+        "So":{
+          "name": "So"
         }
       }
     },
