@@ -30,7 +30,13 @@ sap.ui.define([
                 console.log("navigated to So");
 
             }
+            if( sKey === 'dash')
+            {
+                console.log("dash clicked");
+                oRouter.navTo("Dashboard");
+                console.log("navigated to dash");
 
+            }
              
         }
     });

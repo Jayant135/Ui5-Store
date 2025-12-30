@@ -22,7 +22,7 @@ sap.ui.define([
                     poNumber: "",
                     poDate: "",
                     items: [],
-                    totalAmount: 0
+                    totalAmount: 0,
                 }
             });
 

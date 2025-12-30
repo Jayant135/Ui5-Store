@@ -153,16 +153,21 @@ sap.ui.define([
             }
 
             const batch = this._db.batch();
-
+            const oCategoryTotals = {};
             oSO.items.forEach(i => {
                 const invRef = this._db.collection("inventory").doc(i.itemId);
                 batch.update(invRef, {
                     stock: Firebase.FieldValue.increment(-i.qty)
                 });
+                oCategoryTotals[item.category]=
+                (oCategoryTotals[items.category] || 0 ) + items.total;
             });
 
             const soRef = this._db.collection("salesOrders").doc();
-            batch.set(soRef, oSO);
+            batch.set(soRef, {
+                ...oSO,
+                oCategoryTotals: oCategoryTotals
+            });
 
             try {
                 await batch.commit();

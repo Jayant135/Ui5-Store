@@ -1,0 +1,167 @@
+<mvc:View
+    controllerName="store.controller.Dashboard"
+    xmlns:mvc="sap.ui.core.mvc"
+    xmlns="sap.m"
+    xmlns:viz="sap.viz.ui5.controls"
+    xmlns:viz.data="sap.viz.ui5.data"
+    xmlns:viz.feeds="sap.viz.ui5.controls.common.feeds">
+
+    <Page title="Store Dashboard" enableScrolling="true">
+
+        <content>
+
+            <!-- CATEGORY WISE SALES -->
+<!-- CATEGORY WISE CHARTS -->
+<Panel headerText="Dashboard Charts" class="sapUiMediumMargin">
+
+    <HBox fitContainer="true" justifyContent="SpaceBetween" renderType="Bare">
+        <!-- CATEGORY WISE SALES -->
+        <viz:VizFrame
+            height="300px"
+            width="32%"
+            vizType="column"
+            uiConfig="{applicationSet:'fiori'}"
+            vizProperties="{ title:{ text:'Category Wise Sales' } }">
+
+            <viz:dataset>
+                <viz.data:FlattenedDataset data="{dashboard>/categoryTotals}">
+                    <viz.data:dimensions>
+                        <viz.data:DimensionDefinition name="Category" value="{dashboard>category}" />
+                    </viz.data:dimensions>
+                    <viz.data:measures>
+                        <viz.data:MeasureDefinition name="Sales" value="{dashboard>sales}" />
+                    </viz.data:measures>
+                </viz.data:FlattenedDataset>
+            </viz:dataset>
+
+            <viz:feeds>
+                <viz.feeds:FeedItem uid="categoryAxis" type="Dimension" values="Category"/>
+                <viz.feeds:FeedItem uid="valueAxis" type="Measure" values="Sales"/>
+            </viz:feeds>
+        </viz:VizFrame>
+
+        <!-- CATEGORY WISE PURCHASE -->
+        <viz:VizFrame
+            height="300px"
+            width="32%"
+            vizType="column"
+            uiConfig="{applicationSet:'fiori'}"
+            vizProperties="{ title:{ text:'Category Wise Purchase' } }">
+
+            <viz:dataset>
+                <viz.data:FlattenedDataset data="{dashboard>/categoryTotals}">
+                    <viz.data:dimensions>
+                        <viz.data:DimensionDefinition name="Category" value="{dashboard>category}" />
+                    </viz.data:dimensions>
+                    <viz.data:measures>
+                        <viz.data:MeasureDefinition name="Purchase" value="{dashboard>purchase}" />
+                    </viz.data:measures>
+                </viz.data:FlattenedDataset>
+            </viz:dataset>
+
+            <viz:feeds>
+                <viz.feeds:FeedItem uid="categoryAxis" type="Dimension" values="Category"/>
+                <viz.feeds:FeedItem uid="valueAxis" type="Measure" values="Purchase"/>
+            </viz:feeds>
+        </viz:VizFrame>
+
+        <!-- PROFIT TREND -->
+        <viz:VizFrame
+            height="300px"
+            width="32%"
+            vizType="line"
+            uiConfig="{applicationSet:'fiori'}"
+            vizProperties="{ title:{ text:'Profit Trend' } }">
+
+            <viz:dataset>
+                <viz.data:FlattenedDataset data="{dashboard>/profitTrend}">
+                    <viz.data:dimensions>
+                        <viz.data:DimensionDefinition name="Period" value="{dashboard>period}" />
+                    </viz.data:dimensions>
+                    <viz.data:measures>
+                        <viz.data:MeasureDefinition name="Profit" value="{dashboard>profit}" />
+                    </viz.data:measures>
+                </viz.data:FlattenedDataset>
+            </viz:dataset>
+
+            <viz:feeds>
+                <viz.feeds:FeedItem uid="categoryAxis" type="Dimension" values="Period"/>
+                <viz.feeds:FeedItem uid="valueAxis" type="Measure" values="Profit"/>
+            </viz:feeds>
+        </viz:VizFrame>
+    </HBox>
+</Panel>
+
+            <!-- CATEGORY WISE PROFIT -->
+            <Panel headerText="Category-wise Profit" class="sapUiMediumMargin">
+
+                <Table
+                    items="{dashboard>/categoryTotals}"
+                    growing="true"
+                    width="100%">
+
+                    <columns>
+                        <Column width="40%">
+                            <Text text="Category"/>
+                        </Column>
+                        <Column width="30%" hAlign="Center">
+                            <Text text="Profit"/>
+                        </Column>
+                        <Column width="30%">
+                            <Text text="Status"/>
+                        </Column>
+                    </columns>
+
+                    <items>
+                        <ColumnListItem>
+                            <cells>
+                                <Text text="{dashboard>category}"/>
+                                <ObjectNumber
+                                    number="{dashboard>profit}"
+                                    numberUnit="₹"/>
+                                <ObjectStatus
+                                    text="{dashboard>profitStatus}"
+                                    state="{dashboard>profitState}"/>
+                            </cells>
+                        </ColumnListItem>
+                    </items>
+
+                </Table>
+            </Panel>
+
+            <!-- LOW INVENTORY -->
+            <Panel headerText="Low Inventory" class="sapUiMediumMargin">
+
+                <Table
+                    items="{dashboard>/lowStockItems}"
+                    growing="true"
+                    width="100%">
+
+                    <columns>
+                        <Column width="40%">
+                            <Text text="Item"/>
+                        </Column>
+                        <Column width="30%">
+                            <Text text="Category"/>
+                        </Column>
+                        <Column width="30%" hAlign="Center">
+                            <Text text="Quantity"/>
+                        </Column>
+                    </columns>
+
+                    <items>
+                        <ColumnListItem>
+                            <cells>
+                                <Text text="{dashboard>name}"/>
+                                <Text text="{dashboard>category}"/>
+                                <ObjectNumber number="{dashboard>quantity}"/>
+                            </cells>
+                        </ColumnListItem>
+                    </items>
+
+                </Table>
+            </Panel>
+
+        </content>
+    </Page>
+</mvc:View>

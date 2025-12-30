@@ -93,6 +93,11 @@
           "name":"So",
           "pattern":"So",
           "target": ["So"]
+        },
+        {
+          "name":"Dashboard",
+          "pattern":"Dashboard",
+          "target": ["Dashboard"]
         }
       ],
       "targets": {
@@ -108,6 +113,9 @@
         },
         "So":{
           "name": "So"
+        },
+        "Dashboard":{
+          "name": "Dashboard"
         }
       }
     },
