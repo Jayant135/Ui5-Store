@@ -6,17 +6,19 @@ sap.ui.define([
     "sap/m/MessageBox"
 ], function (Controller, JSONModel, Firebase, MessageToast, MessageBox) {
     "use strict";
-
+ 
     return Controller.extend("store.controller.So", {
-
+ 
         onInit: function () {
             this._db = Firebase.init();
-
-            const oSOModel = new JSONModel({
+ 
+            const oModel = new JSONModel({
                 soList: [],
                 categories: ["Groceries", "Stationary"],
                 items: [],
                 selectedItem: null,
+                selectedSO: null,
+                mode: "CREATE", // CREATE | EDIT
                 currentSO: {
                     soNumber: "",
                     soDate: "",
@@ -25,21 +27,20 @@ sap.ui.define([
                     totalAmount: 0
                 }
             });
-
-            this.getView().setModel(oSOModel, "so");
-
+ 
+            this.getView().setModel(oModel, "so");
             const oDetailModel = new JSONModel({ selectedSO: null });
             this.getView().setModel(oDetailModel, "soDetail");
-
+ 
             this._loadSOs();
         },
-
-        /* ================= LOAD SOs ================= */
-
+ 
+        /* ================= LOAD ================= */
+ 
         _loadSOs: function () {
             const oModel = this.getView().getModel("so");
             const aSOs = [];
-
+ 
             this._db.collection("salesOrders").get().then(snapshot => {
                 snapshot.forEach(doc => {
                     aSOs.push(doc.data());
@@ -47,9 +48,19 @@ sap.ui.define([
                 oModel.setProperty("/soList", aSOs);
             });
         },
-
-        /* ================= SO NUMBER ================= */
-
+ 
+        /* ================= SELECTION ================= */
+ 
+        onSOSelect: function (oEvent) {
+            const oSO = oEvent.getParameter("listItem")
+                .getBindingContext("so")
+                .getObject();
+ 
+            this.getView().getModel("so").setProperty("/selectedSO", oSO);
+        },
+ 
+        /* ================= CREATE ================= */
+ 
         _generateSONumber: async function () {
             const ref = this._db.collection("counters").doc("soNumber");
             const snap = await ref.get();
@@ -58,13 +69,12 @@ sap.ui.define([
             await ref.set({ lastNumber: last });
             return "SO-" + last;
         },
-
-        /* ================= CREATE SO ================= */
-
+ 
         onCreateSO: async function () {
             const soNumber = await this._generateSONumber();
             const oModel = this.getView().getModel("so");
-
+ 
+            oModel.setProperty("/mode", "CREATE");
             oModel.setProperty("/currentSO", {
                 soNumber,
                 soDate: new Date().toLocaleDateString(),
@@ -72,25 +82,68 @@ sap.ui.define([
                 items: [],
                 totalAmount: 0
             });
-
-            oModel.setProperty("/items", []);
-            oModel.setProperty("/selectedItem", null);
-
+ 
+            this._loadItemsByCategory("Groceries");
             this.byId("soDialog").open();
         },
-
-        onCancelSO: function () {
-            this.byId("soDialog").close();
-        },
-
-        /* ================= CATEGORY ================= */
-
-        onCategoryChange: function (oEvent) {
-            const sCat = oEvent.getSource().getSelectedItem().getText();
+ 
+        /* ================= EDIT ================= */
+ 
+        onEditSO: function () {
             const oModel = this.getView().getModel("so");
-
+            const oSO = oModel.getProperty("/selectedSO");
+ 
+            if (!oSO) {
+                MessageToast.show("Select a Sales Order");
+                return;
+            }
+ 
+            oModel.setProperty("/mode", "EDIT");
+            oModel.setProperty("/currentSO", JSON.parse(JSON.stringify(oSO)));
+ 
+            this._loadItemsByCategory("Groceries");
+            this.byId("soDialog").open();
+        },
+ 
+        /* ================= DELETE ================= */
+ 
+        onDeleteSO: function () {
+            const oModel = this.getView().getModel("so");
+            const oSO = oModel.getProperty("/selectedSO");
+ 
+            if (!oSO) {
+                MessageToast.show("Select a Sales Order");
+                return;
+            }
+ 
+            MessageBox.confirm(
+                `Delete Sales Order ${oSO.soNumber}?`,
+                {
+                    onClose: async (sAction) => {
+                        if (sAction === MessageBox.Action.OK) {
+                            const snap = await this._db
+                                .collection("salesOrders")
+                                .where("soNumber", "==", oSO.soNumber)
+                                .get();
+ 
+                            snap.forEach(doc => doc.ref.delete());
+                            MessageToast.show("SO Deleted");
+ 
+                            oModel.setProperty("/selectedSO", null);
+                            this._loadSOs();
+                        }
+                    }
+                }
+            );
+        },
+ 
+        /* ================= ITEMS ================= */
+ 
+        _loadItemsByCategory: function (sCategory) {
+            const oModel = this.getView().getModel("so");
+ 
             this._db.collection("inventory")
-                .where("category", "==", sCat)
+                .where("category", "==", sCategory)
                 .get()
                 .then(snapshot => {
                     const aItems = [];
@@ -100,154 +153,211 @@ sap.ui.define([
                     oModel.setProperty("/items", aItems);
                 });
         },
-
-        /* ================= ITEM ================= */
-
+ 
+        onCategoryChange: function (oEvent) {
+            this._loadItemsByCategory(
+                oEvent.getSource().getSelectedItem().getText()
+            );
+        },
+ 
         onItemSelect: function (oEvent) {
             const sId = oEvent.getSource().getSelectedKey();
             const oModel = this.getView().getModel("so");
-            const oItem = oModel.getProperty("/items").find(i => i.id === sId);
+            const oItem = oModel.getProperty("/items")
+                .find(i => i.id === sId);
+ 
             oModel.setProperty("/selectedItem", oItem);
         },
-
+ 
         onAddItem: function () {
             const oModel = this.getView().getModel("so");
             const oItem = oModel.getProperty("/selectedItem");
             const qty = Number(this.byId("soQtyInput").getValue());
-
-            if (!oItem || !qty) {
-                MessageToast.show("Select item and quantity");
+ 
+            if (!oItem || qty <= 0) {
+                MessageToast.show("Select item & quantity");
                 return;
             }
-
+ 
+            if (qty > oItem.stock) {
+                MessageToast.show("Insufficient stock");
+                return;
+            }
+ 
+            const aItems = oModel.getProperty("/currentSO/items");
+ 
             const oSOItem = {
                 itemId: oItem.id,
                 name: oItem.name,
                 category: oItem.category,
                 price: oItem.price,
                 qty,
-                total: oItem.price * qty
+                total: qty * oItem.price
             };
-
-            const aItems = oModel.getProperty("/currentSO/items");
-            aItems.push(oSOItem);
-
+ 
+            const aNewItems = aItems.concat(oSOItem);
+            oModel.setProperty("/currentSO/items", aNewItems);
+ 
             oModel.setProperty(
                 "/currentSO/totalAmount",
-                aItems.reduce((s, i) => s + i.total, 0)
+                aNewItems.reduce((s, i) => s + i.total, 0)
             );
-
+ 
             this.byId("soQtyInput").setValue("");
-            oModel.refresh(true);
+            this.byId("soItemSelect").setSelectedKey("");
         },
-
-        /* ================= SAVE SO ================= */
-
+ 
+        /* ================= SAVE ================= */
+ 
         onSaveSO: async function () {
             const oModel = this.getView().getModel("so");
             const oSO = oModel.getProperty("/currentSO");
-
-            if (!oSO.items.length || !oSO.customer) {
-                MessageToast.show("Enter customer and add items");
+            const sMode = oModel.getProperty("/mode");
+ 
+            if (!oSO.customer || !oSO.items.length) {
+                MessageToast.show("Enter customer & items");
                 return;
             }
-
-            const batch = this._db.batch();
-            const oCategoryTotals = {};
-            oSO.items.forEach(i => {
-                const invRef = this._db.collection("inventory").doc(i.itemId);
-                batch.update(invRef, {
-                    stock: Firebase.FieldValue.increment(-i.qty)
-                });
-                oCategoryTotals[item.category]=
-                (oCategoryTotals[items.category] || 0 ) + items.total;
-            });
-
-            const soRef = this._db.collection("salesOrders").doc();
-            batch.set(soRef, {
-                ...oSO,
-                oCategoryTotals: oCategoryTotals
-            });
-
+ 
             try {
-                await batch.commit();
-                MessageToast.show("SO Created");
+                if (sMode === "CREATE") {
+                    await this._db.collection("salesOrders").add(oSO);
+                    MessageToast.show("SO Created");
+                } else {
+                    const snap = await this._db
+                        .collection("salesOrders")
+                        .where("soNumber", "==", oSO.soNumber)
+                        .get();
+ 
+                    snap.forEach(doc => doc.ref.update(oSO));
+                    MessageToast.show("SO Updated");
+                }
+ 
                 this.byId("soDialog").close();
+                oModel.setProperty("/selectedSO", null);
+                oModel.setProperty("/mode", "CREATE");
                 this._loadSOs();
+ 
             } catch (e) {
-                MessageBox.error("Failed to save SO");
+                MessageBox.error("Save failed");
             }
         },
-
-        /* ================= DETAILS ================= */
-
-        onSORowPress: function (oEvent) {
-            const oSO = oEvent.getSource().getBindingContext("so").getObject();
-            const oModel = this.getView().getModel("soDetail");
-            oModel.setProperty("/selectedSO", oSO);
-
-             if (!this._soDetailDialog) {
-        this._soDetailDialog = this._createSODetailDialog();
-    }
-
-    this._soDetailDialog.open();
+ 
+        onCancelSO: function () {
+            this.byId("soDialog").close();
         },
-
+        onRemoveItem: function (oEvent) {
+            const oCtx = oEvent.getSource().getBindingContext("so");
+            const oItem = oCtx.getObject();
+            const oModel = this.getView().getModel("so");
+ 
+            const aItems = oModel.getProperty("/currentSO/items")
+                .filter(i => i !== oItem);
+ 
+            oModel.setProperty("/currentSO/items", aItems);
+ 
+            const total = aItems.reduce((sum, i) => sum + i.total, 0);
+            oModel.setProperty("/currentSO/totalAmount", total);
+        },
+        onQtyChange: function (oEvent) {
+            const oInput = oEvent.getSource();
+            const oCtx = oInput.getBindingContext("so");
+            const oItem = oCtx.getObject();
+            const oModel = this.getView().getModel("so");
+ 
+            const qty = Number(oInput.getValue());
+            if (qty <= 0) {
+                MessageToast.show("Quantity must be greater than 0");
+                return;
+            }
+            if (qty > oItem.stock) {
+                MessageToast.show("Exceeds available stock");
+                return;
+            }
+ 
+            oItem.qty = qty;
+            oItem.total = qty * oItem.price;
+ 
+            // Recalculate SO total
+            const aItems = oModel.getProperty("/currentSO/items");
+            const total = aItems.reduce((sum, i) => sum + i.total, 0);
+ 
+            oModel.setProperty("/currentSO/totalAmount", total);
+            oModel.refresh(true);
+        },
         _createSODetailDialog: function () {
-    const oDialog = new sap.m.Dialog({
-        title: "Sales Order Details",
-        contentWidth: "700px",
-        draggable: true,
-        content: [
-            new sap.m.ObjectHeader({
-                title: "{soDetail>/selectedSO/soNumber}",
-                number: "{soDetail>/selectedSO/totalAmount}",
-                numberUnit: "₹",
-                attributes: [
-                    new sap.m.ObjectAttribute({
-                        text: "{soDetail>/selectedSO/soDate}"
-                    }),
-                    new sap.m.ObjectAttribute({
-                        text: "Customer: {soDetail>/selectedSO/customer}"
-                    })
-                ]
-            }),
-            new sap.m.Table({
-                items: "{soDetail>/selectedSO/items}",
-                columns: [
-                    new sap.m.Column({ header: new sap.m.Text({ text: "Item" }) }),
-                    new sap.m.Column({ header: new sap.m.Text({ text: "Qty" }) }),
-                    new sap.m.Column({ header: new sap.m.Text({ text: "Price" }) }),
-                    new sap.m.Column({ header: new sap.m.Text({ text: "Total" }) })
-                ],
-                items: {
-                    path: "soDetail>/selectedSO/items",
-                    template: new sap.m.ColumnListItem({
-                        cells: [
-                            new sap.m.Text({ text: "{soDetail>name}" }),
-                            new sap.m.Text({ text: "{soDetail>qty}" }),
-                            new sap.m.Text({ text: "{soDetail>price}" }),
-                            new sap.m.ObjectNumber({
-                                number: "{soDetail>total}",
-                                unit: "₹"
+ 
+            const oDialog = new sap.m.Dialog({
+                title: "Sales Order Details",
+                contentWidth: "700px",
+                draggable: true,
+                content: [
+ 
+                    new sap.m.ObjectHeader({
+                        title: "{soDetail>/selectedSO/soNumber}",
+                        number: "{soDetail>/selectedSO/totalAmount}",
+                        numberUnit: "₹",
+                        attributes: [
+                            new sap.m.ObjectAttribute({
+                                text: "{soDetail>/selectedSO/soDate}"
+                            }),
+                            new sap.m.ObjectAttribute({
+                                text: "Customer: {soDetail>/selectedSO/customer}"
                             })
                         ]
+                    }),
+ 
+                    new sap.m.Table({
+                        items: "{soDetail>/selectedSO/items}",
+                        columns: [
+                            new sap.m.Column({ header: new sap.m.Text({ text: "Item" }) }),
+                            new sap.m.Column({ header: new sap.m.Text({ text: "Qty" }) }),
+                            new sap.m.Column({ header: new sap.m.Text({ text: "Price" }) }),
+                            new sap.m.Column({ header: new sap.m.Text({ text: "Total" }) })
+                        ],
+                        items: {
+                            path: "soDetail>/selectedSO/items",
+                            template: new sap.m.ColumnListItem({
+                                cells: [
+                                    new sap.m.Text({ text: "{soDetail>name}" }),
+                                    new sap.m.Text({ text: "{soDetail>qty}" }),
+                                    new sap.m.Text({ text: "{soDetail>price}" }),
+                                    new sap.m.ObjectNumber({
+                                        number: "{soDetail>total}",
+                                        unit: "₹"
+                                    })
+                                ]
+                            })
+                        }
                     })
-                }
-            })
-        ],
-        beginButton: new sap.m.Button({
-            text: "Close",
-            press: function () {
-                oDialog.close();
+                ],
+                beginButton: new sap.m.Button({
+                    text: "Close",
+                    press: function () {
+                        oDialog.close();
+                    }
+                })
+            });
+ 
+            this.getView().addDependent(oDialog);
+            return oDialog;
+        },
+        onShowSODetails: function (oEvent) {
+            const oSO = oEvent
+                .getSource()
+                .getBindingContext("so")
+                .getObject();
+ 
+            if (!this._soDetailDialog) {
+                this._soDetailDialog = this._createSODetailDialog();
             }
-        })
-    });
-
-    this.getView().addDependent(oDialog);
-    return oDialog; // ✅ RETURN dialog
-}
-
-
+ 
+            this.getView()
+                .getModel("soDetail")
+                .setProperty("/selectedSO", oSO);
+ 
+            this._soDetailDialog.open();
+        }
+ 
     });
 });

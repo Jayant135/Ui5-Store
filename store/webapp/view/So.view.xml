@@ -2,116 +2,208 @@
     controllerName="store.controller.So"
     xmlns:mvc="sap.ui.core.mvc"
     xmlns="sap.m"
-    xmlns:core="sap.ui.core">
-
+    xmlns:core="sap.ui.core"
+>
     <Page title="Sales Orders">
+        <Panel class="sapUiSmallMargin">
+            <headerToolbar>
+                <OverflowToolbar>
+                    <Title
+                        text="Sales Orders"
+                        level="H2"
+                    />
+                    <ToolbarSpacer width="75%" />
 
-        <!-- PREVIOUS SOs -->
-        <Panel headerText="Previous Sales Orders" class="sapUiSmallMargin">
+                    <Button
+                        icon="sap-icon://add"
+                        text="Create"
+                        type="Emphasized"
+                        press="onCreateSO"
+                    />
+
+                    <Button
+                        icon="sap-icon://edit"
+                        text="Edit"
+                        enabled="{= ${so>/selectedSO} !== null }"
+                        press="onEditSO"
+                    />
+
+                    <Button
+                        icon="sap-icon://delete"
+                        text="Delete"
+                        type="Negative"
+                        enabled="{= ${so>/selectedSO} !== null }"
+                        press="onDeleteSO"
+                    />
+                </OverflowToolbar>
+            </headerToolbar>
+
             <Table
                 items="{so>/soList}"
-                inset="false"
-                alternateRowColors="true">
-
+                mode="SingleSelectMaster"
+                selectionChange="onSOSelect"
+                alternateRowColors="true"
+            >
                 <columns>
-                    <Column><Text text="SO No"/></Column>
-                    <Column><Text text="Date"/></Column>
-                    <Column><Text text="Customer"/></Column>
-                    <Column hAlign="End"><Text text="Amount"/></Column>
+                    <Column>
+                        <Text text="SO No" />
+                    </Column>
+                    <Column>
+                        <Text text="Date" />
+                    </Column>
+                    <Column>
+                        <Text text="Customer" />
+                    </Column>
+                    <Column hAlign="Center">
+                        <Text text="Amount" />
+                    </Column>
+                    <Column width="3rem" />
                 </columns>
 
                 <items>
-                    <ColumnListItem type="Active" press="onSORowPress">
+                    <ColumnListItem>
                         <cells>
-                            <Text text="{so>soNumber}"/>
-                            <Text text="{so>soDate}"/>
-                            <Text text="{so>customer}"/>
-                            <ObjectNumber number="{so>totalAmount}" unit="₹"/>
+                            <Text text="{so>soNumber}" />
+                            <Text text="{so>soDate}" />
+                            <Text text="{so>customer}" />
+                            <ObjectNumber
+                                number="{so>totalAmount}"
+                                unit="₹"
+                            />
+                            <Button
+                                icon="sap-icon://inspection"
+                                type="Transparent"
+                                press="onShowSODetails"
+                            />
                         </cells>
                     </ColumnListItem>
                 </items>
-
             </Table>
         </Panel>
 
-        <!-- ACTION BAR -->
-        <OverflowToolbar class="sapUiSmallMargin">
-            <ToolbarSpacer/>
-            <Button
-                icon="sap-icon://add"
-                text="Create SO"
-                type="Emphasized"
-                press="onCreateSO"/>
-        </OverflowToolbar>
-
-        <!-- CREATE SO DIALOG -->
+        <!-- CREATE / EDIT DIALOG -->
         <Dialog
             id="soDialog"
-            title="Create Sales Order"
+            title="{= ${so>/mode} === 'EDIT' ? 'Edit Sales Order' : 'Create Sales Order' }"
             contentWidth="700px"
-            draggable="true">
-
+            draggable="true"
+        >
             <VBox class="sapUiMediumMargin">
+                <ObjectHeader
+                    title="{so>/currentSO/soNumber}"
+                    number="{so>/currentSO/totalAmount}"
+                    numberUnit="₹"
+                />
 
-                <Label text="Customer Name"/>
-                <Input value="{so>/currentSO/customer}"/>
+                <Label text="Customer" />
+                <Input value="{so>/currentSO/customer}" />
 
-                <Label text="Category"/>
-                <Select items="{so>/categories}" change="onCategoryChange">
+                <Label text="Category" />
+                <Select
+                    items="{so>/categories}"
+                    change="onCategoryChange"
+                >
                     <items>
-                        <core:Item key="{so>}" text="{so>}"/>
+                        <core:Item
+                            key="{so>}"
+                            text="{so>}"
+                        />
                     </items>
                 </Select>
 
-                <Label text="Item"/>
+                <Label text="Item" />
                 <ComboBox
                     id="soItemSelect"
                     items="{so>/items}"
-                    selectionChange="onItemSelect">
+                    selectionChange="onItemSelect"
+                >
                     <items>
-                        <core:Item key="{so>id}" text="{so>name}"/>
+                        <core:Item
+                            key="{so>id}"
+                            text="{so>name}"
+                        />
                     </items>
                 </ComboBox>
 
-                <Label text="Quantity"/>
-                <Input id="soQtyInput" type="Number"/>
+                <Label text="Quantity" />
+                <Input
+                    id="soQtyInput"
+                    type="Number"
+                />
 
                 <Button
-                    text="Add Item"
                     icon="sap-icon://add"
-                    press="onAddItem"/>
+                    text="Add Item"
+                    press="onAddItem"
+                />
 
-                <!-- ITEMS TABLE -->
-                <Table items="{so>/currentSO/items}" class="sapUiSmallMarginTop">
+                <Table
+                    items="{so>/currentSO/items}"
+                    class="sapUiSmallMarginTop"
+                    inset="false"
+                >
                     <columns>
-                        <Column><Text text="Item"/></Column>
-                        <Column><Text text="Qty"/></Column>
-                        <Column><Text text="Price"/></Column>
-                        <Column hAlign="End"><Text text="Total"/></Column>
+                        <Column>
+                            <Text text="Item" />
+                        </Column>
+                        <Column hAlign="Center">
+                            <Text text="Qty" />
+                        </Column>
+                        <Column hAlign="End">
+                            <Text text="Price" />
+                        </Column>
+                        <Column hAlign="End">
+                            <Text text="Total" />
+                        </Column>
+                        <Column width="3rem" />
                     </columns>
 
                     <items>
                         <ColumnListItem>
                             <cells>
-                                <Text text="{so>name}"/>
-                                <Text text="{so>qty}"/>
-                                <Text text="{so>price}"/>
-                                <ObjectNumber number="{so>total}" unit="₹"/>
+                                <Text text="{so>name}" />
+
+                                <!-- EDITABLE QTY -->
+                                <Input
+                                    value="{so>qty}"
+                                    type="Number"
+                                    width="4rem"
+                                    liveChange="onQtyChange"
+                                />
+
+                                <Text text="{so>price}" />
+
+                                <ObjectNumber
+                                    number="{so>total}"
+                                    unit="₹"
+                                />
+
+                                <!-- DELETE ITEM -->
+                                <Button
+                                    icon="sap-icon://delete"
+                                    type="Transparent"
+                                    press="onRemoveItem"
+                                />
                             </cells>
                         </ColumnListItem>
                     </items>
                 </Table>
-
             </VBox>
 
             <beginButton>
-                <Button text="Save SO" type="Emphasized" press="onSaveSO"/>
+                <Button
+                    text="Save"
+                    type="Emphasized"
+                    press="onSaveSO"
+                />
             </beginButton>
+
             <endButton>
-                <Button text="Cancel" press="onCancelSO"/>
+                <Button
+                    text="Cancel"
+                    press="onCancelSO"
+                />
             </endButton>
-
         </Dialog>
-
     </Page>
 </mvc:View>

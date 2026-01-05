@@ -3,42 +3,33 @@
     xmlns:mvc="sap.ui.core.mvc"
     xmlns="sap.m"
     xmlns:t="sap.ui.table"
+    xmlns:core="sap.ui.core"
 >
     <Page title="Inventory">
         <!-- Category Tiles -->
         <HBox
             class="sapUiSmallMargin"
-            wrap="Wrap"
+            wrap="WrapReverse"
+            items="{inv>/categories}"
         >
             <GenericTile
-                header="Groceries"
+                header="{inv>name}"
                 press="onCategoryPress"
+                class="sapUiTinyMarginEnd"
             >
                 <customData>
                     <core:CustomData
                         key="category"
-                        value="Groceries"
-                        xmlns:core="sap.ui.core"
+                        value="{inv>name}"
                     />
                 </customData>
-                <TileContent>
-                    <NumericContent value="1762" />
-                </TileContent>
-            </GenericTile>
 
-            <GenericTile
-                header="Stationary"
-                press="onCategoryPress"
-            >
-                <customData>
-                    <core:CustomData
-                        key="category"
-                        value="Stationary"
-                        xmlns:core="sap.ui.core"
+                <TileContent footer="{inv>lowStockItems} low stock items">
+                    <NumericContent
+                        value="{inv>totalItems}"
+                        scale="Items"
+                        valueColor="Good"
                     />
-                </customData>
-                <TileContent>
-                    <NumericContent value="12" />
                 </TileContent>
             </GenericTile>
         </HBox>
@@ -73,16 +64,12 @@
                     <cells>
                         <!-- NAME -->
                         <HBox>
-                            <Text
-                                text="{inv>name}"
-                            />
+                            <Text text="{inv>name}" />
                         </HBox>
 
                         <!-- STOCK -->
                         <HBox>
-                            <Text
-                                text="{inv>stock}"
-                            />
+                            <Text text="{inv>stock}" />
                         </HBox>
 
                         <!-- COST -->
@@ -110,10 +97,9 @@
                                 visible="{inv>_edit}"
                             />
                         </HBox>
-                         <!-- PRICE -->
+                        <!-- PRICE -->
                         <HBox>
-                            <Text
-                                text="{inv>Margin}" />
+                            <Text text="{inv>margin}" />
                         </HBox>
                     </cells>
                 </ColumnListItem>
@@ -126,7 +112,7 @@
                 press="onAdd"
             />
             <Button
-                id ="btnEdit"
+                id="btnEdit"
                 text="Edit"
                 press="onEdit"
             />
@@ -140,8 +126,6 @@
                 press="onDelete"
             />
         </Toolbar>
-
-       
 
         <Dialog
             id="addDialog"

@@ -3,30 +3,50 @@
     xmlns:mvc="sap.ui.core.mvc"
     xmlns="sap.m"
 >
-    <Page
-        title="{i18n>title}"
-    >
-       <IconTabHeader
-		id="tabBar"
-        mode="Inline"
-		class="sapUiResponsiveContentPadding "
-        select="onSelect"
+    <App id="app1">
+        <Page
+            title="{i18n>title}"
+			enableScrolling="false"
+			
         >
-		<items >
-			<IconTabFilter text="Dashboard" key="dash" >
-				<Text text="Info content goes here ..." />
-			</IconTabFilter>
-			<IconTabFilter text="Inventory" key="inventory" >
-				<Text text="Attachments go here ..." />
-			</IconTabFilter>
-			<IconTabFilter text="Billing" key="so">
-				<Text text="Notes go here ..." />
-			</IconTabFilter>
-			<IconTabFilter text="Purchasing" key="po">
-				<Text text="People content goes here ..." />
-			</IconTabFilter>
-		</items>
-	</IconTabHeader>
-       
-    </Page>
+            <headerContent>
+                <IconTabHeader
+                    id="tabBar"
+                    mode="Inline"
+                    class="sapUiResponsiveContentPadding "
+                    select="onSelect"
+                >
+                    <items>
+                        <IconTabFilter
+                            text="Dashboard"
+                            key="dash"
+                        >
+                            <Text text="Info content goes here ..." />
+                        </IconTabFilter>
+                        <IconTabFilter
+                            text="Inventory"
+                            key="inventory"
+                        >
+                            <Text text="Attachments go here ..." />
+                        </IconTabFilter>
+                        <IconTabFilter
+                            text="Billing"
+                            key="so"
+                        >
+                            <Text text="Notes go here ..." />
+                        </IconTabFilter>
+                        <IconTabFilter
+                            text="Purchasing"
+                            key="po"
+                        >
+                            <Text text="People content goes here ..." />
+                        </IconTabFilter>
+                    </items>
+                </IconTabHeader>
+            </headerContent>
+            <content >
+                <NavContainer id="navContainer" />
+            </content>
+        </Page>
+    </App>
 </mvc:View>

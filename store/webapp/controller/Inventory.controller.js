@@ -17,11 +17,12 @@ sap.ui.define([
             const oModel = new JSONModel({
                 selectedCategory: "",
                 items: [],
-                showTable: false
+                showTable: false,
+                categories: []
             });
             this.getView().setModel(oModel, "inv");
 
-            //   this._loadItems();
+            this._loadCategorySummary();
         },
 
         // 🔹 Load items by category
@@ -39,6 +40,38 @@ sap.ui.define([
                         .setProperty("/items", aItems);
                 });
         },
+        // Load category summary
+        _loadCategorySummary: function () {
+            const LOW_STOCK_LIMIT = 5;
+            const oMap = {};
+
+            this._db.collection("inventory").get().then(snapshot => {
+
+                snapshot.forEach(doc => {
+                    const d = doc.data();
+                    const c = d.category;
+
+                    if (!oMap[c]) {
+                        oMap[c] = {
+                            name: c,
+                            totalItems: 0,
+                            lowStockItems: 0
+                        };
+                    }
+
+                    oMap[c].totalItems++;
+
+                    if (d.stock <= LOW_STOCK_LIMIT) {
+                        oMap[c].lowStockItems++;
+                    }
+                });
+
+                this.getView()
+                    .getModel("inv")
+                    .setProperty("/categories", Object.values(oMap));
+            });
+        },
+
 
         // 🔹 Tile click handler
         onCategoryPress: function (oEvent) {
@@ -163,6 +196,7 @@ sap.ui.define([
                 this.byId("btnEdit").setText("Edit");
                 this.getView().getModel("inv").refresh(true);
             });
+            
         },
 
 
@@ -186,6 +220,7 @@ sap.ui.define([
                     MessageToast.show("Item deleted");
                     this._loadItems();
                 });
+            this._loadCategorySummary();
         },
         onSaveItem: function () {
             const sName = this.byId("inpName").getValue();
@@ -212,6 +247,7 @@ sap.ui.define([
                 this._resetDialog();
             });
             this.byId("btnEdit").setText("Edit");
+            this._loadCategorySummary();
 
         },
         onCancelDialog: function () {

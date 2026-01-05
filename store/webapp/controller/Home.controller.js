@@ -5,6 +5,7 @@ sap.ui.define([
 
     return Controller.extend("store.controller.Home", {
         onInit() {
+            this.getOwnerComponent().getRouter().navTo("Dashboard");
         },
         onSelect (oEvent) {
             var sKey = oEvent.getParameter("key");

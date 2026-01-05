@@ -64,7 +64,7 @@
       "config": {
         "routerClass": "sap.m.routing.Router",
         "controlAggregation": "pages",
-        "controlId": "app",
+        "controlId": "navContainer",
         "transition": "slide",
         "type": "View",
         "viewType": "XML",
@@ -120,9 +120,9 @@
       }
     },
     "rootView": {
-      "viewName": "store.view.App",
+      "viewName": "store.view.Home",
       "type": "XML",
-      "id": "App",
+      "id": "App1",
       "async": true
     }
   }
